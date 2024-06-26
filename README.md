@@ -20,9 +20,9 @@ I decided to go with 2D project as it less complicated in terms of physics and o
 After importing some free assets from Unity Store, I was ready to proceed to the next part. With the help of Brackeys channel, I learned about the player movement in Unity. Since, I am working on a top- down game, it is cruicial to rotate player based on mouse movement, so I implemented that.   
 Till now, I have made a basic structure of the game, with the player movement, shooting script, as well as the orientation based on mouse movement.  
 Basic Features(till now):
-W,A,S,D - for player movement  
-Hold Shift - for sprint (have not made timer for this yet)
-Left Mousekey and Mousemovement - to shoot and rotate player aim.  
+W,A,S,D - for player movement    
+Hold Shift - for sprint (have not made timer for this yet)   
+Left Mousekey and Mousemovement - to shoot and rotate player aim.     
 
 For the next part I am planning on implementing:
 - Multi-player Features
