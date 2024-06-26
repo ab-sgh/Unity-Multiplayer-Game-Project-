@@ -1,3 +1,4 @@
+**Note**: Due to some reason, the game scene doesn't load directly while opening the game for the first time. So, drag 'Game Scenes' from Assets folder to the Hierarchy tab. I'll try to fix this
 
 # Multi-Player Game using Unity
 
