@@ -1,21 +1,26 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
 public class networkHealthState : NetworkBehaviour
 {
-    [HideInInspector]
-    public NetworkVariable<int> HealthPoint = new NetworkVariable<int>();
+    public NetworkVariable<int> HealthPoint = new NetworkVariable<int>(100);
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         if (IsServer)
         {
-            HealthPoint.Value = 100;
+            HealthPoint.Value = 100; // Initialize health on server
+        }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (IsServer)
+        {
+            int oldHealth = HealthPoint.Value;
+            HealthPoint.Value = Mathf.Max(HealthPoint.Value - damage, 0);
+            Debug.Log($"Health updated: Old: {oldHealth}, New: {HealthPoint.Value}");
         }
     }
 }
-
-

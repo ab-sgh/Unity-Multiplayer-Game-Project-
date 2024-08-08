@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Netcode;
 using Cainos.PixelArtTopDown_Basic;
-using System.Data.Common;
-using Unity.VisualScripting;
 
 public class playermovement : NetworkBehaviour
 {
@@ -14,15 +10,50 @@ public class playermovement : NetworkBehaviour
     public Rigidbody2D rb;
     private Camera _mainCamera;
 
+    private networkHealthState healthState;
+
     private void Initialize()
     {
         _mainCamera = Camera.main;
+        healthState = GetComponent<networkHealthState>();
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        if (IsServer && IsOwner)
+        {
+            // Host spawns at (6, -9)
+            SetPosition(new Vector2(6f, -9f));
+        }
+        else if (!IsServer && IsOwner)
+        {
+            // Client spawns at (2, 12.53)
+            SetPosition(new Vector2(2f, 12.53f));
+        }
+
         Initialize();
+    }
+
+    private void SetPosition(Vector2 position)
+    {
+        transform.position = position;
+
+        if (IsServer)
+        {
+            // Sync the position with all clients
+            SetPositionClientRpc(position);
+        }
+    }
+
+    [ClientRpc]
+    private void SetPositionClientRpc(Vector2 position)
+    {
+        if (!IsOwner) // Ensure that the client only updates positions for other players, not itself.
+        {
+            transform.position = position;
+        }
     }
 
     Vector2 movement;
@@ -71,13 +102,20 @@ public class playermovement : NetworkBehaviour
         float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
         rb.rotation = angle;
     }
-    void OnTriggerEnter2D(Collider2D collider )
-{
-    if (!IsServer) return;
-    if (collider.GetComponent<BulletScript>() && GetComponent<NetworkObject>().OwnerClientId != collider.GetComponent<NetworkObject>().OwnerClientId)
-    {
-        GetComponent<networkHealthState>().HealthPoint.Value -= 10;
-    }
-}
 
+    void OnTriggerEnter2D(Collider2D collider)
+    {
+        Debug.Log("Collision detected with: " + collider.name);
+
+        if (!IsServer) return;
+
+        var bulletScript = collider.GetComponent<BulletScript>();
+        if (bulletScript)
+        {
+            Debug.Log("Player hit by bullet");
+            // Assuming the health state is on the same object as the script
+            healthState.HealthPoint.Value -= 10;
+            Debug.Log("New health: " + healthState.HealthPoint.Value);
+        }
+    }
 }
