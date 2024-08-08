@@ -1,6 +1,9 @@
 using UnityEngine;
 using Unity.Netcode;
 
+using UnityEngine;
+using Unity.Netcode;
+
 public class BulletCollision : NetworkBehaviour
 {
     public GameObject hitPrefab;
@@ -24,47 +27,64 @@ public class BulletCollision : NetworkBehaviour
     }
 
     private void HandleCollision(Collider2D collider)
-{
-    if (!IsServer) return;
-
-    Debug.Log("Bullet collided with: " + collider.name);
-
-    if (collider.CompareTag("Player"))
     {
-        var player = collider.GetComponent<playermovement>();
-        if (player != null)
-        {
-            Debug.Log("Player hit by bullet");
-            // Call the server RPC to update health
-            var networkObjectId = player.GetComponent<NetworkObject>().NetworkObjectId;
-            UpdatePlayerHealthServerRpc(networkObjectId);
+        if (!IsServer) return;
 
-            // Check if the player health reaches zero
-            var playerHealthState = player.GetComponent<networkHealthState>();
-            if (playerHealthState != null && playerHealthState.HealthPoint.Value <= 0)
+        Debug.Log("Bullet collided with: " + collider.name);
+
+        if (collider.CompareTag("Player"))
+        {
+            var player = collider.GetComponent<playermovement>();
+            if (player != null)
             {
-                var gameManager = FindObjectOfType<GameManager>();
-                if (gameManager != null)
+                Debug.Log("Player hit by bullet");
+
+                // Check if the NetworkObject is spawned before calling the RPC
+                if (NetworkObject.IsSpawned)
                 {
-                    gameManager.NotifyGameOverServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
+                    // Call the server RPC to update health
+                    var networkObjectId = player.GetComponent<NetworkObject>().NetworkObjectId;
+                    UpdatePlayerHealthServerRpc(networkObjectId);
+
+                    // Check if the player health reaches zero
+                    var playerHealthState = player.GetComponent<networkHealthState>();
+                    if (playerHealthState != null && playerHealthState.HealthPoint.Value <= 0)
+                    {
+                        var gameManager = FindObjectOfType<GameManager>();
+                        if (gameManager != null)
+                        {
+                            gameManager.NotifyGameOverServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
+                        }
+                    }
+
+                    // Spawn hit effect on all clients
+                    SpawnHitEffectServerRpc(transform.position);
+                }
+                else
+                {
+                    Debug.LogWarning("Tried to call an RPC on a bullet that isn't spawned yet.");
                 }
             }
-
-            // Spawn hit effect on all clients
-            SpawnHitEffectServerRpc(transform.position);
         }
-    }
-    else
-    {
-        Debug.Log("Bullet hit a non-player object");
-        // Spawn hit effect on all clients
-        SpawnHitEffectServerRpc(transform.position);
-    }
+        else
+        {
+            Debug.Log("Bullet hit a non-player object");
 
-    // Destroy the bullet
-    NetworkObject.Despawn();
-}
+            // Ensure the NetworkObject is spawned before calling the RPC
+            if (NetworkObject.IsSpawned)
+            {
+                // Spawn hit effect on all clients
+                SpawnHitEffectServerRpc(transform.position);
+            }
+            else
+            {
+                Debug.LogWarning("Tried to call an RPC on a bullet that isn't spawned yet.");
+            }
+        }
 
+        // Destroy the bullet after handling collision
+        NetworkObject.Despawn();
+    }
 
     [ServerRpc(RequireOwnership = false)]
     private void UpdatePlayerHealthServerRpc(ulong playerNetworkObjectId)
@@ -92,3 +112,4 @@ public class BulletCollision : NetworkBehaviour
         Instantiate(hitPrefab, position, Quaternion.identity);
     }
 }
+
