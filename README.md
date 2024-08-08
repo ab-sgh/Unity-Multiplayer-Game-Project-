@@ -30,7 +30,7 @@ For the next part I am planning on implementing:
 - UI including winner, bestscore etc.  
 - Some extra animations for aesthetics
 
-- ##Implementing Multiplayer
+## Implementing Multiplayer
 
   In the later part of the project, I have implemented multiplayer system to the game.
   Now the game is a 1v1 2d top down shooter where the two players spawn at opposite side of the map and whoever dies first loses the game.
